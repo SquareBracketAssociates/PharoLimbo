@@ -1,0 +1,5 @@
+\BOOKMARK [0][-]{chapter.1}{The Opal Compiler}{}% 1
+\BOOKMARK [1][-]{section.1.1}{Build of the Abstract Syntax tree}{chapter.1}% 2
+\BOOKMARK [1][-]{section.1.2}{Intermediate Representation}{chapter.1}% 3
+\BOOKMARK [1][-]{section.1.3}{Bytecode}{chapter.1}% 4
+\BOOKMARK [1][-]{section.1.4}{Decompilation}{chapter.1}% 5
