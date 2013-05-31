@@ -44,7 +44,7 @@ This chapter is about the basic window gadgets (aka widgets) used to compose gra
 \subsection{Opening a window}
 The basic class for managing a window is \clsind{StandardWindow}. Let's start with an empty one.
 
-\dothis{To create and open an empty window just try the following:}
+\emph{To create and open an empty window just try the following:}
 
 \begin{code}{}
 StandardWindow new openInWorld
@@ -292,7 +292,7 @@ w openInWorld.
 w extent: 100@50.
 w position: 0@0
 \end{code}
-\dothis{Now try the following: first create a window but without opening it; then set its size and its position and then open it by sending \ct{openInWorld} to it.}
+\emph{Now try the following: first create a window but without opening it; then set its size and its position and then open it by sending \ct{openInWorld} to it.}
 \needlines{4}
 \begin{code}{}
 w := StandardWindow new title: 'My first window'.
@@ -329,7 +329,7 @@ b model: b.
 b action: #delete.
 \end{code}
 
-\dothis{click the button}
+\emph{click the button}
  
  OK. The button is deleted. Since, block is an object and block is a chunk of operation that can be evaluated later. We can make a button do more complicated operations by setting model with a block and action with \clsind{\#value}.
 
@@ -418,14 +418,26 @@ myButtonAction
 	self changed: #notEmpty
 \end{code}
 
-\dothis{click the button more than 5 times}
+\emph{click the button more than 5 times}
 
 \paragraph{Notes - to be removed}
 
 I do not understand why we support radiobutton behavior here!
 I would clean that
 \begin{code}{}
-mouseDown: evt	"Details: If this button is triggered on mouse down or the event is the menu gesture, handle it immediately. Otherwise, make a list of buttons (including the receiver) for mouseMove feedback. This allows a simple radio-button effect among the button submorphs of a given morph."	self enabled ifFalse: [^self].	allButtons := nil.	evt yellowButtonPressed ifTrue: [^ self invokeMenu: evt].	self wantsKeyboardFocusOnMouseDown		ifTrue: [self takeKeyboardFocus].	triggerOnMouseDown		ifTrue: [ self performAction: evt ]		ifFalse: [			allButtons := owner submorphs select: [:m | m class = self class].			self updateFeedbackForEvt: evt].
+mouseDown: evt
+	"Details: If this button is triggered on mouse down or the event is the menu gesture, handle it immediately. Otherwise, make a list of buttons (including the receiver) for mouseMove feedback. This allows a simple radio-button effect among the button submorphs of a given morph."
+
+	self enabled ifFalse: [^self].
+	allButtons := nil.
+	evt yellowButtonPressed ifTrue: [^ self invokeMenu: evt].
+	self wantsKeyboardFocusOnMouseDown
+		ifTrue: [self takeKeyboardFocus].
+	triggerOnMouseDown
+		ifTrue: [ self performAction: evt ]
+		ifFalse: [
+			allButtons := owner submorphs select: [:m | m class = self class].
+			self updateFeedbackForEvt: evt].
 \end{code}
 
 
@@ -555,7 +567,7 @@ Historically, these two possibilities are respectively provided by the \clsind{T
 \subsection{Composing a morph}
 To add a morph into a parent morph, just make use of the \mthind{Morph}{addMorph:} message. Together with the use of the \ct{extent:} and of the \ct{position:} messages, it is straightforward to compose a morph.
 
-\dothis{Declare a morph with a small extent and its parent with a bigger extent, then assign a color to the parent (different from blue), set the position of the parent, add the first morph to the parent and open the parent morph}
+\emph{Declare a morph with a small extent and its parent with a bigger extent, then assign a color to the parent (different from blue), set the position of the parent, add the first morph to the parent and open the parent morph}
 
 As an example, you can try with the following code:
 
@@ -582,7 +594,7 @@ The result is shown in \figref{fig:composingMorph1}. You may be surprised becaus
 \item second, the parent position has been set \textbf{before} the sub-morph has been added to it.
 \end{itemize}
 
-\dothis{To be convinced, try the same experiment but this time, set the parent morph before adding the sub-morph}
+\emph{To be convinced, try the same experiment but this time, set the parent morph before adding the sub-morph}
 
 \begin{code}
 | sub parent |
@@ -603,19 +615,19 @@ The result of this second try is shown in \figref{fig:composingMorph2}.
 
 For this second solution, the sub-morph is well physically inside its parent.
 
-\dothis{Move the parent morph with the mouse or by sending to it the message \ct{position:} with a point as argument. Do this for the two solutions}
+\emph{Move the parent morph with the mouse or by sending to it the message \ct{position:} with a point as argument. Do this for the two solutions}
 
 You can observe that the sub-morph is also moved whatever the solution you consider. If you inspect the sub-morph after having moved its parent you can see that its position has changed accordingly. So we can say that the sub-morph is logically in its parent but this doesn't mean that it is physically inside its parent. The reason why the second solution sub-morph is drawn inside its parent is only because the parent position has been changed after the sub-morph adding. 
 
 The consequence is that if you want a submorph to be placed inside the area occupied by its parent then you have to explicitly calculate its position according to the parent position.
 
-\dothis{Open the morph halo on the parent morph, then change the parent extent by clicking on the bottom right yellow button and moving the mouse around with the mouse button down. Do the same but with the sub-morph}
+\emph{Open the morph halo on the parent morph, then change the parent extent by clicking on the bottom right yellow button and moving the mouse around with the mouse button down. Do the same but with the sub-morph}
 
 You observe that, if you change the parent morph extent, then the sub-morph extent stays unchanged and that you can make the parent morph smaller that its sub-morph. The same thing occurs if you change the sub-morph extent. It means that sub-morph and parent morph extents are managed independently.
 
 So, if you want a morph extent to be changed according to a particular rule, for example according to a parent or a sub-morph extent change, then you have to implement it.
 
-\dothis{To exercise yourself, try to implement the following: a red morph containing one row with three adjacent white sub-morphs, each containing itself a \ct{StringMorph} showing its position. see \figref{fig:composingMorph3}}.
+\emph{To exercise yourself, try to implement the following: a red morph containing one row with three adjacent white sub-morphs, each containing itself a \ct{StringMorph} showing its position. see \figref{fig:composingMorph3}}.
 
 \begin{figure}[htbp]
 \begin{center}
