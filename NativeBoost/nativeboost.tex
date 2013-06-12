@@ -184,7 +184,7 @@ NativeBoost forCurrentPlatform loadModule: 'nameOfModule'
 Note that module names are platform dependent, so for example to load the OpenGL library you may want to use `OpenGL32' on windows and `libGL.so' or even  `/usr/lib/libGL.so' on linux.
 
 
-\paragraph{About marshaling.} In the \ct{clock} callout example above, the return type is \ct{int} and not \ct{SmallInteger}. This is the same as with function arguments. They are all described in terms of C language. In general you don't have to worry too much about this, because the \NativeBoost library knows how to map standard C values to Smalltalk objects and viceversa. So, when this message is executed, the return value will be converted into a \ct{SmallInteger}. 
+\paragraph{About marshaling.} In the \ct{clock} callout example above, the return type is \ct{int} and not \ct{SmallInteger}. This is the same as with function arguments. They are all described in terms of C language. In general you don't have to worry too much about this, because the \NativeBoost library knows how to map standard C values to Smalltalk objects and vice-versa. So, when this message is executed, the return value will be converted into a \ct{SmallInteger}. 
 You can also define new mappings from C types to Smalltalk objects. 
 This is useful when wrapping libraries that define new C types as we will show later. 
 
@@ -1068,6 +1068,111 @@ AthensCairoSurface>>primWidth: aWidth height: aHeight
 % You also don't need to do a session checking, since it is done
 % automatically by resource manager.
 % 
+% 
+% ---------- Forwarded message ----------
+% From: Igor Stasenko <siguctua@gmail.com>
+% Date: Mon, Nov 26, 2012 at 10:41 AM
+% Subject: [Pharo-project] [ANN] NativeBoost v 1.7
+% To: Pharo Development <Pharo-project@lists.gforge.inria.fr>
+% 
+% 
+% Hi, there
+% 
+% i'd like to announce new version of NativeBoost - 1.7.
+% 
+% Here's an overview of changes comparing to previous version:
+% 
+%  - indirect argument in signatures.
+% You can now use special syntax to indicate that argument to external
+% function should be taken from n-th element of variable object (like
+% Array)
+% from method's argument or instance variable.
+% 
+% Syntax:
+% 
+% myMethod: args
+% <primitive: .... >
+% ^ self nbCall: #( void funFoo( int args@1 , float args@2 ))
+% 
+% Usage:
+% 
+% self myMethod: { 1 .  1.2 }
+% 
+% Thanks to Ciprian Teodorov who proposed and implemented it.
+% 
+% - Win32, features and examples:
+% 
+% NBWin32Shell - an interface to use windows shell api
+% (executing commands, showing control panel settings)
+% 
+% different examples for using HDC, message box etc.
+% 
+% Thanks to Torsten Bergmann for contribution!
+% 
+% And last bits, from me:
+% 
+% A public API changes to avoid use of NBFFICallout global, and instead
+% use message(s) to denote FFI callout.
+% 
+% Old syntax:
+% 
+% NBFFICallout cdecl: #(...) emitCall: [ … ]
+% 
+% New syntax:
+% 
+% self nbCallout function: #(…) emit: […]
+% 
+% 
+% Old syntax:
+% 
+% NBFFICallout cdecl: #(...) module: ..
+% 
+% New syntax:
+% 
+% self nbCallout cdecl function: #(…) module: …
+% or:
+% self nbCallout function: #(…) module: …
+% 
+% because cdecl is default
+% 
+% Old syntax:
+% 
+% NBFFICallout cdecl: #(...) module: .. options: #(…)
+% 
+% New syntax:
+% 
+% self nbCallout cdecl;
+%  options: #(…);
+%  function: #(…) module: …
+% 
+% 
+% Old syntax:
+% 
+% NBFFICallout stdcall: #(...) module: .. options: #(…)
+% 
+% New syntax:
+% 
+% self nbCallout stdcall;
+%  options: #(…);
+%  function: #(…) module: …
+% 
+% ----
+% 
+% New API and syntax:
+% 
+% self nbCallout function: <signature> address: [ address block ]
+% 
+% generate code for calling a function located at given address with
+% given signature.
+% The address of function is provided by user in address block, which
+% should return a pointer to the function (NBExternalAddress or Unsigned
+% integer value, representing an absolute address of function).
+% This API is useful, when you need to call some function which is not
+% exported by via DLL symbol directly, but indirectly.
+% 
+% The old NBFFICallout API is still there, but use of it is strongly
+% discouraged. And it will be removed eventually. So be warned! :)
+
 % =================================
 % Help
 % 
