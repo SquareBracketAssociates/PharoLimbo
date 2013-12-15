@@ -323,6 +323,44 @@ the JobStart, so you can listen when a job/progress is started somewhere downstr
 in the control flow.
 %-----------------------------------------------------------------
 
+There are 3 kinds of roles in context:
+
+- subscriber: an object who subscribing for events to receive them later
+- an event source (the object which announces the event)
+- an announcer, an object which provides subscription service and
+through which you can announce events, acting as mediator between 2
+parties above
+
+
+the rest, like registry, Announcement (as class) and subscriptions is
+implementation detail.
+The main reason for using Announcements model is to have decoupling
+between event source (the place/object , which producing events) and
+its handlers. And announcer provides such decoupling.
+
+That means, both subscribers and event source(s) don't need to have
+direct knowledge about
+each other, all they need is to use same announcer to establish
+communication channel.
+
+Then, subscribers don't really care who triggered an event and why/where
+while event source don't really cares who will handle the event(s),
+in what order or how many of them there.
+
+Now, what happens when you mixing roles and treating announcer as an
+event source?
+(and by subclassing from Announcer you doing that).
+
+When you merge event source and announcer, then your subscribers are
+forced to have direct access
+to event source, and that means you actually not using/need decoupling at all.
+
+In this regard, my question: why then you using Announcements model at all?
+Because it is there, or because there should be only one?
+I don't think that either of these reasons are valid.
+When you don't need decoupling , i do not see much value in using Announcements.
+I would implement/use something else then.
+
 %%% Local Variables:
 %%% coding: utf-8
 %%% mode: latex

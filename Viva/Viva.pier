@@ -1,0 +1,124 @@
+! Viva: Animation
+
+
+!! Some 
+
+
+
+Definition of animation:
+ Animation is change of some property over time.
+
+Since we don't know, what exactly properties a user of framework would like to animate
+(it could be movement, changing size, color or shape or anything else), we should provide
+a most abstract way to define it. And that's why we have most basic AnimatedValue class,
+which connects two objects: timer and evaluator.
+
+2. A timer is an object which at given moment of time gives you the value in range from 0 to 1.
+And then evaluator takes this value and evaluates a concrete property, which we want to animate.
+The range 0..1 is made on purpose, to abstract away things like animation duration for evaluator,
+all he needs to know is that at 0 it corresponds to animation start, and at 1 it corresponds at
+animation end.
+
+3. Evaluator, can be any object which represents a function f(t) , where t lies in range [0..1]
+mapping values within that range to some object (it could be anything, like number, point, color etc).
+The only requirement for evaluator is always return same values for same t.
+
+
+So, getting from theory to practice, i can define movement, like in your example, with following:
+
+timer := VITimer new cycleLength: 5.
+movement := VIAnimatedValue new 
+    timer: timer; 
+    evaluator: [:t | 10@10 interpolateTo: 100@100 at: t ].
+
+so, every time you want to know the position of movement, you just simply tell:
+
+currentPosition := movement value 
+
+which gives you a position at current time.
+Now, you can control animation by sending:
+
+timer start.
+timer stop.
+timer restart.
+etc..
+
+As you can see, to define movement i don't need to have separate class 'PAnimationMovement'
+like in your example.
+Instead, i doing it by composing my timer and evaluator of certain kind.
+And this is main difference comparing to your approach: animation framework should be completely neutral to what user wants to animate, and thus there should be no anything like 'PRectangle'
+or 'PCircle'... because the number of things you can animate (or some properties of them)
+is infinite, and if you start counting and adding them one by one , you will never finish.
+
+This is what i wanted you to focus on from the beginning: 
+ - think how you can define animation(s) using timers and evaluators.
+
+The problems which framework should address, should be:
+ - how i can animate and control multiple properties over time?
+
+in simple case, you just using same timer, for instance, 
+i want to move and change the width at same time. 
+I can do that simply by adding new animated value, which uses same timer: 
+
+animatedWidth := VIAnimatedValue new 
+    timer: timer; 
+    evaluator: [:t | 1 interpolateTo: 100 at: t ].
+
+so, now we have 'movement' and 'animatedWidth' , which controlled by same timer,
+and all user needs to do is to evaluate them at moment he needs.
+And since they using same time source (via timer), animation of width stays synchronized
+with animation of movement.
+
+But are we done here? Apparently not. 
+For instance, how i can define following animation: 
+over 10 seconds, please animate position from 10@10 to 100@100
+but only in first 5 seconds, and in next 5 seconds, animate width.
+How we can define that?
+This is where we need to introduce an animation sequencing.
+
+So, we have multiple animations
+a ... b ... c
+
+b should not start until a finishes, c should not start until b finishes.
+All, a, b, c can have own duration, as well as can evaluate to different object(s) e.g. width, point or something else..
+All we want is to be able to make a sequence, like:
+
+sequence := movement, animatedWidth.
+
+and then we can control the sequence as a whole:
+
+sequence start.
+sequence stop
+sequence isFinished
+etc..
+
+And, of course, we need to be able to group multiple animations, so they are synchronized by same time source, lets use abstract #+ operator:
+
+group := movement + animatedWidth.
+
+group start
+group stop
+etc..
+
+Another problem is that given 1000 animated values
+which using same time source, how you can be sure that you evaluate all of them for
+the same point in time?
+Because computing animated values also takes time, and if we simply use VITimer
+for them, we may find that our animation (and hence what we draw on screen)
+can have geometry (or other properties) which are out of sync.
+
+Here, i think where we need to introduce additional object, called 'time source'.
+So, we can 'freeze' the time at certain value until all evaluations is finished,
+and as long as all timers use same time source, they will be synchronized:
+
+timeSource freezeDuring: [
+   1 to: 1000 collect: [:i |  (animatedValues at: i) value
+]
+
+This is what i wanted you to think about and implement.
+Please, think about the model, how you can define different kinds of animations,
+how you control them, and what protocols and API should be there.
+
+Forget about rectangles, circles, SVG, this is a concrete application of framework for 
+concrete things (out of infinitely numerous others), and focusing on animating just rectangle(s)
+is just losing time.
