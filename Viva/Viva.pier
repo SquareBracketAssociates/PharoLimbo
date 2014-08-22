@@ -1,35 +1,54 @@
 ! Viva: Animation
 
 
-!! Some 
+!! Challenges
+
+- same time on different processors. 
+
+- 
+
+- 
+
+!! Some Definitions and Key Classes
+
+Definition of animation: Animation is change of some property over time.
 
 
-
-Definition of animation:
- Animation is change of some property over time.
-
+# Animated Value.
 Since we don't know, what exactly properties a user of framework would like to animate
 (it could be movement, changing size, color or shape or anything else), we should provide
-a most abstract way to define it. And that's why we have most basic AnimatedValue class,
-which connects two objects: timer and evaluator.
+a most abstract way to define it. And that's why we have most basic ==AnimatedValue== class,
+which connects two objects: a timer and an evaluator (see Fig. )
 
-2. A timer is an object which at given moment of time gives you the value in range from 0 to 1.
+
+# Timer. 
+A timer is an object which at given moment of time gives you the value in range from 0 to 1.
 And then evaluator takes this value and evaluates a concrete property, which we want to animate.
 The range 0..1 is made on purpose, to abstract away things like animation duration for evaluator,
 all he needs to know is that at 0 it corresponds to animation start, and at 1 it corresponds at
 animation end.
 
-3. Evaluator, can be any object which represents a function f(t) , where t lies in range [0..1]
+# Evaluator.
+ Evaluator, can be any object which represents a function f(t) , where t lies in range [0..1]
 mapping values within that range to some object (it could be anything, like number, point, color etc).
 The only requirement for evaluator is always return same values for same t.
 
 
+[[[
+movement := VIAnimatedValue new 
+    timer: timer; 
+    evaluator: [:t | x interpolateTo: y at: t ].
+]]]
+
+
 So, getting from theory to practice, i can define movement, like in your example, with following:
 
+[[[
 timer := VITimer new cycleLength: 5.
 movement := VIAnimatedValue new 
     timer: timer; 
     evaluator: [:t | 10@10 interpolateTo: 100@100 at: t ].
+]]]
 
 so, every time you want to know the position of movement, you just simply tell:
 
@@ -122,3 +141,110 @@ how you control them, and what protocols and API should be there.
 Forget about rectangles, circles, SVG, this is a concrete application of framework for 
 concrete things (out of infinitely numerous others), and focusing on animating just rectangle(s)
 is just losing time.
+
+
+
+Couple more things.
+
+How we connect this highly abstract representations of timer and evaluator with real values?
+Especially, this is needed for user convenience, to not force him to construct animations with lengthy 
+descriptions and initializations.
+
+Lets start from simple example: animating a point.
+What we can do is add a convenience method (as extension to Point class) so, users can write:
+
+movement := 10@10 interpolateLinearlyTo: 100@100 over: 5 "seconds".
+
+and that will answer the animated value, ready to use, and equivalent to previous example,
+but much easier to use , isn't?
+
+But that also introduces some limitations: the way how some point can change its position over time
+can be quite different from simple linear movement. What if user wants to have animate accelerated movement e.g. at beginning of animation, values changing slowly, but going faster and faster over time?
+That means, in such cases, we cannot use same evaluator which simply linearly interpolates between two values, so maybe we should provide a standard set of evaluators which implement most common
+kinds of calculations: linear, accelerated, etc.. That, of course, apart from giving user a way to always define own evaluators and not forcing him to use only standard ones.
+So, think how you can introduce them and think how to make them convenient to use.
+
+Another example: interpolation over set of points (or values).
+I wanna write something like:
+
+animatedValue := { 0. 5. 20. 100. 40 } animateOver: 5 "seconds"
+
+this should create such kind of animation, where value changing over time, starts from 0 (at t=0)
+then goes to 5, then to 20 and so on, until it stops at 40 (at t=1)
+
+a more practical example (or variation) of same thing, if i want a point to move along polygonal path
+over specified amount of time:
+
+animatedPoint := { 0@0. 5@10. 20@30. 100@100. 40@0 } animateOver: 5 "seconds"
+
+and even more general, is what if we know the exact positions of our point at each step,
+and want to animate them, so then we can do it like following:
+
+animatedPoint := { 
+      0 -> 0@0. 
+      0.3 -> 5@10. 
+      0.5 -> 20@30. 
+      0.7 -> 100@100. 
+      1 ->40@0 } animateOver: 5 "seconds"
+
+so, here i'm not only specifying positions, but also labeling them with position in time.
+In this way, at t=0 , the evaluated point value should be 0@0,
+at t=0.3 , it should be 5@10 and so on,  and at any t between defined points,
+we simply interpolate between known values.
+So, think how to implement this and make it convenient to use (and then implement, of course).
+
+Last thing: 
+ you may wonder what are subclasses of VITimer doing, and what their purpose?
+This is again same thing: time can also be subject of animation. 
+There is actually two ways how i can make accelerated animation:
+ - i can make an evaluator which calculates the values using acceleration motion formula, like:
+
+  [:t | start + (end * t squared ) ]
+
+but i can also use modified timer, which 'accelerates' time instead of changing evaluator.
+
+Imagine that i specified animation over 10 seconds. Like that we know that our timer should
+produce t=0 at beginning of animation, and produce t=1 after 10 seconds when it was started.
+If we map 0..1 range linearly with real time, we expect that at t=0.5 it will pass exactly 5 seconds
+after animation started.
+But who said that linear mapping is the only formula that we should use?
+Imagine that i want 'accelerated' mapping, so that at t=0.5 it will be not 5 seconds after animation
+started, but 9.. Still the duration of animation can stay same, but the way how time changes for observers (which is evaluator(s)), can be different than simple linear advance.
+
+That means that evaluator can sleep well, and interpolate linearly, without knowing that
+resulting animation will look like accelerated movement. If you familiar with Einstein's Theory
+of Relativity, i think you know what i talking about :)
+
+This area also a subject of exploration. Please think about it , how many different timer modifier(s)
+we can have, how we can combine them, and provide an easy to use API.
+
+A simple applications of this idea, is that you can manipulate animation by manipulating it's time
+(but not evaluators), for example, reverse animation:
+
+the concept is quite simple: we just change the direction of time flow, like that a reverse animation start
+corresponds to end of original animation, and end to start of original.
+And we can do it by simply changing the way how time flows, e.g. by changing its time source (timer):
+ a normal (base) timer changes value(s) of t from 0 to 1 over time.
+A mirrored timer instead changes values from 1 to 0. 
+
+So, reversing animation is as simple as that:
+
+animatedValue timer: (VIMirrorRepeatTimer on: animatedValue timer).
+
+after that, if you observe changing of animatedValue over time, you will see that animation's 
+start and end swapped their places.
+
+So, as you can see there's a lot of things to do and explore in subject field (which is animating properties over time).. and write tests etc.
+
+and i am not even started talking about things like colors, rectangles or different shapes..
+because they are orthogonal: the output of evaluator in most cases is not our concern.. it is user's concern.
+Of course users can animate rectangles if they want, or can create own AnimatedRectangle class
+for convenience of use.. but that's up to the user, but not part of framework.
+
+
+So, i hope i gave you enough food for thought, and i hope you can digest it and align your vision
+with mine.
+Please note, that proposed model may be not perfect and may not the best one how to do things..
+and there's a lot of things uncertain (and that's where i expected you, Mariano to explore and dig deeper, instead of swimming in shallow rectangular waters ;) , which will be piece of cake to do after we finish the API and formalize things and requirements of our framework).
+ 
+What i wanted to tell, that if you have better ideas, how things should work, you must tell. 
