@@ -51,3 +51,14 @@ Win32 built on Sep  4 2014 01:13:32 Compiler: 4.6.2 VMMaker versionString https:
 Commit: c7bc23dd6053d5f9934f7dd427537f76fc96eb32 Jenkins build #14851
 
 
+
+
+
+Be careful, it is not the object that will execute the finalizing code but a shallow copy of it.
+It can lead to deep debugging session sometimes ;-)
+
+    o := Object new.
+    WeakRegistry default add: o. "a shallow copy of o is registered"
+    o := nil.
+    Smalltalk garbageCollect.
+    "the shallow copy of o will receive the finalize message"
