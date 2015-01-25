@@ -1,0 +1,24 @@
+! Xtreams
+
+Xtreams is a generalized stream/iterator framework providing simple, unified API for reading from different kinds of sources and writing into different kinds of destinations (Collections, Sockets, Files, Pipes, etc). 
+
+Primary development is done in VisualWorks by Martin Kobetic and Michael Lucas Smith but there are several ports in varying state of completeness available. 
+
+
+Streams themselves can be sources or destinations as well. This allows one to stack streams on top of each other. At the bottom of such stack is some kind of non-stream (e.g., a collection), we will call it a terminal. Directly above that is a specialized stream providing a streaming facade over the terminal. The rest of the streams in the stack we'll call transforms. Their primary purpose is to perform some kind of transformation on the elements that are passing through. Application code interacts with the top stream of the stack the same way it would with any other stream (or stream stack) producing/consuming the same elements. 
+
+The goal of the framework is to provide consistent behavior between different stacks so that the application can treat them the same way regardless of what exactly is the ultimate source or destination. For example if the application code analyzes binary data, it should be able to treat the source stream the same way if it is a simple stream over a ByteArray or if it is a stack that provides contents of a specific binary part of a mulitpart, gziped, chunked HTTP response from a socket. Xtreams is an attempt to achieve this goal in a scalable and efficient manner.
+
+
+
+!! Where to find Xtreams
+
+Xtreams are currently maintained in Cincom Smalltalk Public Repository (sd- could not find the correct page, link is broken)
+
+There is a port to Squeak/Pharo (thanks to Nicolas Cellier) available on squeaksource.com at http://www.squeaksource.com/Xtreams. The same port with some tweaks (available in the same repository) was successfully imported into Gemstone/S (courtesy of Dale Henrichs). See also https://github.com/mkobetic/Xtreams.
+
+[[[
+	loading here.
+]]]
+
+!! Core
