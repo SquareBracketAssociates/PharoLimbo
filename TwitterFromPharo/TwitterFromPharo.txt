@@ -1,0 +1,40 @@
+From http://d.hatena.ne.jp/kaminami/searchdiary?word=%2A%5BPharo%5D
+
+"Zinc SSO (https://github.com/svenvc/docs/blob/master/zinc/zinc-sso-paper.md)"
+
+Gofer it
+    url: 'http://mc.stfx.eu/ZincHTTPComponents';
+    package: 'ConfigurationOfZincHTTPComponents';
+    load.
+
+(Smalltalk at: #ConfigurationOfZincHTTPComponents) project latestVersion load: 'SSO'.
+"Twitter"
+
+| consumerKey consumerSecret accessToken accessTokenSecret tokenDic token consumerData service userAccess |
+
+consumerKey := 'YOUR_CONSUMER_KEY'.
+consumerSecret := 'YOUR_CONSUMER_SECRET'.
+accessToken := 'YOUR_ACCESS_TOKEN'.
+accessTokenSecret := 'YOUR_ACCESS_SECRET'.
+
+tokenDic := Dictionary new
+                at: 'oauth_token' put: accessToken;
+                at: 'oauth_token_secret' put: accessTokenSecret;
+                yourself.
+token := ZnOAuth1Token newFromDictionary: tokenDic.
+
+consumerData := ZnOAuth1ConsumerData newForTwitter
+                    consumer: consumerKey;
+                    consumerSecret: consumerSecret;
+                    yourself.
+
+service := ZnOAuth1Service new
+                providerAccount: consumerData;
+                yourself.
+
+userAccess := ZnOAuth1TwitterUserAccess new
+                oauth1Service: service;
+                accessToken: token;
+                yourself.
+	
+^ userAccess statusesUpdate: 'Pharo3.0'
