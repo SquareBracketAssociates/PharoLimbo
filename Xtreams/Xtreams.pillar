@@ -3,12 +3,32 @@
 Xtreams is a generalized stream/iterator framework providing simple, unified API for reading from different kinds of sources and writing into different kinds of destinations (Collections, Sockets, Files, Pipes, etc). 
 
 Primary development is done in VisualWorks by Martin Kobetic and Michael Lucas Smith but there are several ports in varying state of completeness available. 
+Nicolas Cellier ported Xtreams to Squeak and Pharo. This chapter is based on the really good documentation of the Xstreams. 
+In this chapter we will present the core functionality and explore different applications showing the power of streams.  
 
 
-Streams themselves can be sources or destinations as well. This allows one to stack streams on top of each other. At the bottom of such stack is some kind of non-stream (e.g., a collection), we will call it a terminal. Directly above that is a specialized stream providing a streaming facade over the terminal. The rest of the streams in the stack we'll call transforms. Their primary purpose is to perform some kind of transformation on the elements that are passing through. Application code interacts with the top stream of the stack the same way it would with any other stream (or stream stack) producing/consuming the same elements. 
+!! Possible APIs Changes
 
-The goal of the framework is to provide consistent behavior between different stacks so that the application can treat them the same way regardless of what exactly is the ultimate source or destination. For example if the application code analyzes binary data, it should be able to treat the source stream the same way if it is a simple stream over a ByteArray or if it is a stack that provides contents of a specific binary part of a mulitpart, gziped, chunked HTTP response from a socket. Xtreams is an attempt to achieve this goal in a scalable and efficient manner.
+[[[label=Comparing classic and xtreams creation API|language=Smalltalk
+The following API is really not nice
 
+	
+	next -> get 
+	next: -> read: 
+	why such inconsistency
+	
+	Ugly and unreadable
+	++	 skips forward specified number of elements
+	--	 skips backward specified number of elements
+	-=	 skips backward specified number of elements from the end(1) of the stream
+	+=	 skips forward specified number of elements from the beginning(1) of the stream
+	
+	
+	why 
+	++ would be better than skip: 
+	terminal instead of contents? WHAT?
+	why conclusion cannot be called contents
+]]]
 
 
 !! Where to find Xtreams
@@ -18,7 +38,91 @@ Xtreams are currently maintained in Cincom Smalltalk Public Repository (sd- coul
 There is a port to Squeak/Pharo (thanks to Nicolas Cellier) available on squeaksource.com at http://www.squeaksource.com/Xtreams. The same port with some tweaks (available in the same repository) was successfully imported into Gemstone/S (courtesy of Dale Henrichs). See also https://github.com/mkobetic/Xtreams.
 
 [[[
-	loading here.
+	loading information here.
 ]]]
 
+
+XStreams is packaged as follows: 
+
+|Package Xtreams-|Notes|
+|Core | Defines the API and core classes
+|Terminals | Streams for all supported terminals (Collections, Blocks, Files, Sockets, Pipes, etc)
+|Transforms |  Core transform streams (collection style, encodings, marshaling, etc)
+|Substreams | Streams embedded in other streams, slicing and stitching streams
+|Multiplexing | A substreaming protocol for sharing a paired read/write stream
+|Crypto | Cryptographic transforms (hashing, encryption, etc)
+|Xtras  | Additional non-core transforms (e.g. compression)
+|Parsing | PEG parsing for Xtreams with a collection of parsers/generators (PEG, Smalltalk, Javascript, Wiki, etc)
+
+
 !! Core
+
+Xtreams is a generalized stream/iterator framework providing simple, unified API for reading from various kinds of sources and writing into various kinds of destinations (Collections, Sockets, Files, Pipes, etc). Streams themselves can be sources or destinations as well, allowing to stack streams on top of each other. At the bottom of such stack is some kind of non-stream (e.g., a collection), we will call it a ''terminal'''. Directly above it is a specialized stream providing a streaming facade over the terminal. The rest of the streams in the stack we'll call ''transforms''. Their primary purpose is to perform some kind of transformation on the elements that are passing through. Application code interacts with the top stream of the stack the same way it would with any other stream (or stream stack) producing/consuming the same elements.
+
+The goal of the framework is to provide consistent behavior of different stacks so that the application code can treat them the same way regardless of what exactly is the ultimate source or destination. For example an application analyzing binary data should be able to treat the source stream the same way if it is a simple stream over a ByteArray or if it is a stack providing contents of a specific binary part of a mulitpart, gziped and chunked HTTP response coming through a socket. Xtreams is an attempt to achieve this goal in a scalable and efficient manner.
+
+Note that the sequence of streams in a stack cannot be completely arbitrary. Each transform constrains the type of input it accepts and the type of output it produces. Since the adjacent streams in a stack are linked so that input of one is connected to the output of the other, they need to produce/consume same type of elements. For example, a "character encoding" read transform converting bytes to characters can only sit on top of a stream that produces bytes (0..255). These constraints are not checked when the stack is being constructed, it is up to the application code to make sure the streams in the stack are compatible with their adjacent streams.
+
+
+!!! Stream Creation
+
+Xtreams strictly separates read and write streams. This allows for simpler API with better consistency. If necessary it would be quite simple to create a wrapper that holds a separate read and write stream and dispatches the read operations to one and write operations to the other.
+
+Streams are primarily created by messages with ==-ing== suffix on the first keyword (it often is a simple unary message). A read stream on top of an arbitrary ''source'' terminal is created by sending message ==reading== to it. The source can be a collection, an IOAccessor (socket, pipe), aFilename, etc. For an exhaustive list of supported types of sources see package ''Xtreams-Terminals''. If ==reading== is sent to a read stream, the same stream is returned.
+
+Similarly, a write stream is created by sending ==writing== to a ''destination'' terminal. Generally the same kinds of objects can serve as sources or destinations, Xtreams-Terminals provides further details on what those are. Message ==writing== sent to a write stream returns the same stream.
+
+[[[label=Comparing classic and xtreams creation API|language=Smalltalk
+"classic"
+'hello world' readStream
+"xtreams"
+'hello world' reading 
+]]]
+
+[[[label=Comparing classic and xtreams creation API|language=Smalltalk
+"classic"
+'hello world' writeStream
+"xtreams"
+'hello world' writing 
+]]]
+
+
+!!! Basic Operations
+Here are few simple examples showing equivalent code in classic streams and xtreams:
+
+[[[
+"classic"
+	'hello world' readStream next: 5.
+"xtreams"
+	'hello world' reading read: 5.
+]]]
+
+
+
+[[[
+"classic"
+	String new writeStream nextPutAll: 'hello'; contents
+"xtreams"
+	String new writing write: 'hello'; close; terminal
+]]]
+
+
+Nothing terribly surprising here, just some API changes. Note that xtreams do not provide the #contents message. It's a read operation and as such it doesn't really fit a write stream. Consequently it only works in specific circumstances (e.g. above), but not in a case like this for example:
+
+[[[
+(ByteArray new withEncoding: #ascii) writeStream nextPutAll: 'Hello'; contents
+]]]
+
+Instead, in Xtreams, if you close a write stream on a collection it will trim the underlying collection down to the actual content. So the collection itself corresponds to stream ==contents== after closing. This provides equivalent capability within the constraints of generally applicable write stream API. Message ==terminal== can be used to retrieve the underlying terminal from a stream or stream stack. Message ==conclusion== can be used as a convenient shortcut combining ==close== and ==terminal= together.
+
+
+|classic	|	xtreams|
+|next	| get|
+|nextPut:	| put:|
+|next:	| read:|
+|next:into:startingAt:	| read:into:/read:into:at: |
+|nextPutAll:|	 write: |
+|next:putAll:startingAt:	| write:from:/write:from:at: |
+|upToEnd	| rest |
+|skip:	| ==++== |
+
