@@ -1,0 +1,31 @@
+	I started to have a look at the API and I wonder why
+	++ is better than skip:
+
+Main reason why we wanted an API that is different from the classical one is that we anticipate that we'll be looking at code that handles both kinds of streams for a long time to come, and having distinct kind of APIs will make it obvious at first sight which type of stream you're expecting to be dealing with. Another issue is that reusing the same selectors implies the same semantics, which isn't the case in a number of subtle and important ways. Admittedly we were also looking outside of smalltalk realm for inspiration and were wondering how to make our stuff more familiar to people outside of smalltalk circles. I don't know whether you find that convincing or not, but FWIW those were our original motivations.
+
+And why you have
+	next -> get
+	next: -> read:
+
+The difference between put/get vs write/read is that the former yields, takes a single element, whereas the latter deals with collections of elements. Again it is a distinction quite common in non-smalltalk APIs, and we thought it is useful distinction to make. The smalltalk selectors aren't terribly obvious either, e.g. nextPut: vs next:putAll:, I wonder how many smalltalkers would be able to remember that off the top of their head. We were also striving for concise selectors, given that we expected to see those with reasonable frequency. Personally I think next:putAll:startingAt: is a mouthful and a lot less obvious compared to write:from:at:. Arguably the ++, --, etc may be taking that a bit too far, but the alternatives skipForward:/skipBackward: aren't that great either. Although I have to admit that I don't do that much skipping in code that I wrote since then, so maybe the case isn't as strong there.
+
+Obviously this is a fairly subjective matter and you can hardly find something that everyone will like. Fortunately it's reasonably superficial as well and if Pharo users decide to rename the selectors that's fine with me. I don't think there's anyone atm that's working on keeping the various dialect ports in sync, and that to me would be the only strong reason to stick with what's in place. However keep in mind that you'll have to deal with the coexistence of the two streaming libraries for quite a while (possibly forever) so make sure that's as easy as it can be to deal with.
+
+HTH,
+
+Martin
+
+	
+
+I do not like
+	+= skips forward specified number of elements from the beginning(1) of the stream
+	-= skips backward specified number of elements from the end(1) of the stream
+	++ skips forward specified number of elements
+	— skips backward specified number of elements
+
+People will complain if we change the API but putting a lot of effort into a new framework and migrating to it
+is not something that we do everyday.
+
+I will put this point also on discussion.
+
+Stef

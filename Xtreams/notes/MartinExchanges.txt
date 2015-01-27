@@ -1,0 +1,16 @@
+"Stéphane Ducasse"<stephane.ducasse@inria.fr> wrote:
+	MIT means something simple: everybody can run away with it.
+	I can tell you that I know why Pharo is MIT: You can fork it and build another one 	against us but we are totally free from any legal department
+	and people know that investing in Pharo they control their code fully.
+
+	For the documentation and all the books we write usually we use Creative Common 	with variation that
+	people can do whaetever they want but need to mention the original author. You cn 	look at the license of http://www.pharobyexample.org
+
+	So tell me what is the license for the documentation. If it is not CC or if the 	license is constraining I will not use your text
+	and rewrite everything.
+
+The only license attached to Xtreams is MIT. As far as I understand that should cover everything including the documentation. It should allow anyone to copy and use the contents of the project in any way they see fit. All I'm saying is that the copyright on the license includes three parties
+
+	Copyright 2010-2013 Cincom Systems, Martin Kobetic and Michael Lucas-Smith
+
+and I am only one of those.
