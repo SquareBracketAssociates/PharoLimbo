@@ -361,6 +361,59 @@ I don't think that either of these reasons are valid.
 When you don't need decoupling , i do not see much value in using Announcements.
 I would implement/use something else then.
 
+
+\section{hierarchy of announcements}
+
+I?ve inherited NautilusClassSelected from NautilusPackageSelected and NautilusProtocolSelected from NautilusClassSelected? to remove duplication. But as announcement subscription also includes it?s subclasses, if you subscribe to NautilusPackageSelected, you end up receiving also NautilusClassSelected, NautilusProtocolSelected and NautilusMethodSelected.
+
+
+When an announcement is raised.... it may ...
+
+
+If you want a hierarchy like:
+SelectionChanged
+	ClassChanged
+	ProtocolChanged
+	MethodChanged
+
+to work, you use double dispatch.
+
+myThing when: SelectionChanged do: [:ann ann handleBy: self ]
+
+
+ClassChanged >> #handleBy: aResponder
+	aResponder classChanged: ann
+
+ProtocolChanged
+	aResponder protoclChanged: ann
+
+
+etc.
+
+You do *not* respond to each specifically
+when ClassChanged do: [:ann self classChanged: ann]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 %%% Local Variables:
 %%% coding: utf-8
 %%% mode: latex
