@@ -1,0 +1,91 @@
+From David Allouche in Pharo-dev to see if 
+The ==hash== method is used in Pharo to separate objects in bucket-based data structures.
+
+
+!! Property
+
+It must have one required property which is required data integrity:
+
+!!!! A. 
+Objects that are equal according to ==\=== must have equal hashes.
+
+
+It should have two desirable properties that are required to support the algorithmic assumptions of bucket-based data structures:
+
+!!!! B. 
+Objects that are not equal should have different hashes. Ideally, the probability of hash collision should by 1/N where N is the size of hash value space.
+
+!!!! C. The hash values should spread as much as possible over their value space. For example: ProtoObject>>#identityHash.
+
+
+
+
+How these two desirable properties can be implemented depends on the actual distribution of the values used to compute the hash.
+
+An object can safely use XOR hashing if its instance variables are all different objects that already provide a hash method with these two properties. 
+
+@@todo check following sentence because the use of singleton is obscure
+
+For example, an object whose behaviour is defined by several of singleton delegates of different classes that do not override Object>>#hash.
+
+But if the instance variables are not guaranteed to have those properties, it is necessary to more thoroughly "mix the bits". For example the  method ==hash== of ==SequenceableCollection== illustrates this point.
+
+
+[[[
+SequenceableCollection >> hash
+	| hash |
+	hash := self species hash.
+	1 to: self size do: [:i | hash := (hash + (self at: i) hash) hashMultiply].
+	^ hash
+]]]
+
+
+The mixing of the bits is done by the combination of addition and ==hashMultiply==. The value of ==species hash== does not need to be processed by ==hashMultiply==, because it is probably computed by the method =identityHash== of ==ProtoObject==, and that already provides property C.
+
+!!! When we should not use XOR
+
+==LayoutFrame== is a particularly good example of a data structure that should not use XOR hashing. Its instance variables provide none of the required properties: 
+
+- ==SmallInteger>>hash== is just ==^self==.
+- In addition, common ==LayoutFrame== instances tend to use pairs of identical values in their instance variables. Like ==0@0 corner: 1@1==, or ==Margin fromNumber: 10==.
+
+A good hash function for LayoutFrame needs to:
+
+- Get hashes for each instance variable that provides properties A and B.
+- Combine them in a way that is order-sensitive (to maintain property B) and that does some extra mixing (to provide property C).
+
+Now, we can assume that common values for the instance variables will be instances of ==SmallInteger==, ==Float==, or ==Fraction==.
+
+You can see in ==Fraction>>hash==, that a comment mentions the assumption that the fraction is already reduced, that is what makes it acceptable to use bitXor.
+
+The hash of ==SmallInteger== does provide properties A and B, but not property C. The hash of ==Float== is harder to understand, but tests show that it provides distinct values for 0.5, 0.25 and 0.125. So it hopefully provides B for the range of values of interest to ==LayoutFrame==.
+
+Another class that has similar hashing constraints to ==LayoutFrame== is ==Point==. Its ==hash== method is:
+
+[[[
+Point >> hash
+	"Hash is reimplemented because = is implemented."
+	^(x hash hashMultiply + y hash) hashMultiply
+]]]
+
+It does not include species in the computation, which is less than ideal because it favours collisions with objects of different species that have a similar content and a the same hash algorithm.
+
+Finally, it is probably not necessary or useful to use the accessors to get to the instance variables.
+
+So a good implementation for LayoutFrame is
+
+[[[
+LayoutFrame >> hash
+	| hash |
+	hash := self species hash
+	hash := (hash + leftFraction hash) hashMultiply
+	hash := (hash + leftOffset hash) hashMultiply
+	hash := (hash + topFraction hash) hashMultiply
+	hash := (hash + topOffset hash) hashMultiply
+	hash := (hash + rightFraction hash) hashMultiply
+	hash := (hash + rightOffset hash) hashMultiply
+	hash := (hash + bottomFraction hash) hashMultiply
+	hash := (hash + bottomOffset hash) hashMultiply
+	^ hash
+]]]
+
