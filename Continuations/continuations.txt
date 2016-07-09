@@ -1,0 +1,164 @@
+Les continuations pour les nuls - Illustration en Smalltalk
+
+Qu’est ce qu’une continuation ?
+
+Les continuations sont un concept de programmation bien établi maintenant permettant de capturer explicitement l’état d’un programme en cours d’exécution, ce qui peut s’avérer très utile dans certain contexte comme nous le verrons un peu plus bas. Issues initialement des langages de programmation fonctionnels comme Scheme, les continuations sont présentes maintenant dans de nombreux langages dynamiques comme Ruby, Python ou Smalltalk. Le concept reste néanmoins mystérieux et difficile à comprendre pour la majorité des développeurs. En fait, c’est relativement simple à comprendre, une continuation est grosso-modo une fonction qui une fois appelée ne retourne pas le contrôle à celui qui l’a appellé. C’est comme si l’exécution du programme se téléportait à un autre endroit du programme ... Pour appréhender cette notion, nous nous proposons ici de l’illustrer simplement en construisant un mécanisme de continuation dans un langage objet comme Smalltalk.
+
+Introduire la notion de pile.
+
+Dans la plupart des langages de programmation lorsque l’on appelle une fonction ou dans le cadre d’un langage à objet, lorsqu’on applique une méthode sur un objet, des informations concernant la fonction ainsi que ses variables locales sont stockées dans une zone particulière de la mémoire : la pile, appellée également contexte d’exécution ou pile d’appels. Il est très facile de voir une pile d’exécution Smalltalk, lancer une image Pharo quelconque, appuyer sur la séquence de touche d’interruption (CTRL-ALT-. ou Pomme-ALT-. suivant la plateforme), puis dans le panneau qui s’affiche sélectionner « débug » pour ouvrir un nouveau débuggeur Smalltalk. La pile ST courante est visible dans la partie haute du déboggeur, la ligne la plus haute correspondant au dernier appel en cours. Le débogueur permet de se déplacer facilement dans la pile de contexte et avoir accès à l’ensemble des objets (variables locales et paramètres des méthodes) comme on l’a vu précédemment. Pour des raisons d’efficacité cette pile n’est pas réifié (disponible sous forme d’objets) à chaque instant, mais uniquement à la demande comme ici en utilisant le mot thisContext dont nous reparlerons un peu plus tard.
+
+Dessin d’une pile d’appels ?
+Voir dessin d’une pile d’appel dans un déboggeur Smalltalk.
+
+S’il est bien un mécanisme auquel le développeur est si bien adapté, qu’il n’y pense même plus, c’est bien celui de la notion de pile. Dans la plupart des langages de programmation, ce mécanisme fait partie du modèle du langage et il n’est pas possible de s’en passer (il existe néanmoins des implémentations de langages qui n’utilisent pas de pile, comme Stackless Python :  http://www.stackless.com/). Le principal inconvénient d’une pile c’est qu’elle nécessite un emplacement mémoire de taille variable et qu’il n’est pas possible de borner à priori la taille de cet emplacement. Les langages fonctionnels utilisent notamment beaucoup la récursivité pour faire des itérations et il tout à fait possible si on n’y prend pas garde de ne pas avoir suffisamment de place avant de pouvoir finir un calcul. Ceci est encore plus vrai dans un contexte de systèmes embarqués (robots par exemple), dans lequel l’espace mémoire est fortement contraint. Il existe également des algorithmes qui s’expriment beaucoup plus facilement en utilisant des boucles récursives comme par exemple le tri rapide, qui utilise un principe « diviser pour régner », en divisant la liste à trier en deux parties qui sont récursivement triées.
+
+Définir ce qu’est la continuation courante.
+
+Prenons un exemple concret en Smalltalk pour montrer comment il serait possible de travailler sans pile. Définissons les 4 méthodes suivantes sur la même classe : 
+
+Zork>>fortyTwo
+   ^ 42
+
+Zork>>twentyThree
+   ^ 23
+
+Zork>>add: x to: y
+   ^ x + y
+
+Zork>>sixtyFive
+   | x y |
+   x := self fortyTwo.
+   y := self twentyThree.
+   ^ self add: x to: y 
+
+Pour mémoire, les chapeaux (^) permettent de retourner une valeur à la méthode appelante. Chaque fois que l’on fait un envoi de messages depuis une méthode, il faut imaginer que les informations locales de la méthode sont stockés dans la pile. 
+
+Si on exécute la méthode sixtyFive sur un objet de la classe Zork on obtient comme résultat la valeur 65.
+Zork new sixtyFive. => 65
+
+Est-il possible de réécrire ces 4 méthodes sans utiliser de retour explicite de valeurs avec un ^ ? Oui si on explicite au moyen d’un argument, le futur d’un calcul. Cet argument est un bloc qui doit donc être rajouté comme argument à chaque méthode. On appelle ce style d’écriture le "continuation passing style" (CPS).
+
+Zork>>fortyTwoDo: aBlock
+   aBlock value: 42
+
+Zork>>twentyThreeDo: aBlock
+   aBlock value: 23
+
+Zork>>add: x to: y do: aBlock
+   aBlock value: x + y
+
+Zork>>sixtyFiveDo: aBlock
+   self fortyTwoDo:
+     [:x |
+     self twentyThreeDo:
+        [:y |
+        self add: x to: y do:
+          [:result |
+          aBlock value: result]]]
+
+On a alors : 
+(Zork new) fortyTwoDo:[:v | ^v]. => 42
+(Zork new) sixtyFiveDo:[:v | ^v]. = > 65
+
+Même s’il est tout à fait possible d’utiliser ce style de programmation, cela reste assez lourd et on aimerait bien pouvoir manipuler la suite d’un calcul de manière plus simple et explicite. Ceci est possible dans un langage comme Smalltalk.
+
+Implémentation d’un mécanisme de continuation en Pharo
+ 
+Il n’y a pas d’objet Continuation en standard en Pharo mais il est très simple d’en construire. Commençons par définir une classe Continuation sous-classe d’Object représentant un contexte d’exécution gelé. Il est relativement facile de réaliser un mécanisme de réification de continuations dans un langage de programmation comme Smalltalk, car nous avons accès à chaque instant à la pile d’exécution du programme. Pour rappel, nous avons vu dans un épisode précédent, qu’il existe très peu de mots clés en ST. thisContext est l’un d’entre eux. En envoyant le message sender à l’objet thisContext, la VM Smalltalk construit un objet Smalltalk de la classe BlockContext représentant la pile d’exécution à l’instant courant.
+
+Trois méthodes de classes sont nécessaire à la classe Continuation : 
+
+Continuation>>current
+ ^self fromContext: thisContext sender
+
+Continuation>>currentDo: aBlock
+^aBlock value: (self fromContext: thisContext sender)
+
+current et currentDo: construisent une nouvelle continuation en appelant la méthode de classe fromContext:
+
+Continuation>>fromContext: aContext
+^self new initializeFromContext: aContext
+
+fromContext: initialize un nouvel objet Continuation.
+
+Même si la classe Continuation dérive d’Object, elle doit disposer de la même interface qu’un bloc instance de la classe BlockClosure (pourquoi ?). Un objet Continuation doit notamment répondre aux messages : numArgs qui retourne le nombre d’arguments du bloc (forcemment 1 pour une continuation), value, value: et valueWithArguments:.
+
+Continuation>>>numArgs
+^1
+
+La méthode initializeFromContext: stocke le contexte courant (i.e la pile d’exécution) dans la variable d’instance « values » de la Continuation.
+
+Continuation>>initializeFromContext:aContext
+    | valueStream context |
+    valueStream := WriteStream on: (Array new: 20).
+    context := aContext.
+    [context notNil] whileTrue:
+        [valueStream nextPut: context.
+        1 to: context class instSize do: [:i | valueStream nextPut: (context instVarAt: i)].
+        1 to: context localSize do: [:i | valueStream nextPut: (context localAt: i)].
+        context := context sender].
+    values := valueStream contents
+
+La méthode restoreValue est duale de la précédente, puisqu’elle remet le contexte stocké dans la continuation comme contexte courant d’exécution : 
+
+Continuation>>restoreValues
+    | valueStream context |
+    valueStream := values readStream.
+    [valueStream atEnd] whileFalse:
+        [context := valueStream next.
+        1 to: context class instSize do: [:i | context instVarAt: i put: valueStream next].
+        1 to: context localSize do: [:i | context localAt: i put: valueStream next]]
+
+La méthode terminate: détruit un contexte passé en paramètre, pour cela l’ensemble des envoyeurs du contexte sont mis à nil.
+
+Continuation>>terminate: aContext
+    | context |
+    context := aContext.
+    [context notNil] whileTrue: [context := context swapSender: nil]
+
+Invoquer une continuation par la méthode value: consiste à terminer le contexte courant, à restaurer le contexte précédent et installer ce contexte restauré dans la pile d’exécution ST  :
+
+Continuation>>value: anObject
+    self terminate: thisContext.
+    self restoreValues.
+    thisContext swapSender: values first.
+    ^ anObject
+
+On remarquera que l’objet passé en paramètre est retourné comme résultat.
+
+Réalisons notre premier programme manipulant des continuations, pour cela exécutons le code qui suit dans un Workspace. Que se passe-t-il ? 
+| tmp | 
+b := [:cc | tmp := cc. 1]
+x := Continuation currentDo:b.
+Transcript show:x; cr.
+tmp value: x+1.
+
+La ligne 1 définit une variable temporaire nommée tmp. La ligne 2, construit un bloc à un paramètre qui est associé à l’identificateur b. Ce bloc lorsqu’il sera exécuté, initialise la variable tmp (définie à l’extérieur du bloc) par la valeur passée en paramètre et retourne 1 comme résultat. A la ligne 3, on exécute le bloc b en lui passant en paramètre la continuation courante. La valeur retournée par le bloc est affecté à l’identificateur x, la variable tmp contient la continuation courante. La ligne 4 est un simple affichage de la valeur de x, c’est-à-dire 1, puis on passe à la ligne. Enfin la ligne 5, permet de revenir à l’exécution de la ligne 3, en retournant cette fois ci non pas 1, mais la valeur de x+1, c’est-à-dire 2. La valeur 2 est affichée dans le Transcript à la ligne 4, puis on reprend à la ligne 3, etc ... 
+Nous avons donc réalisé une itération infinie affichant dans la fenêtre Transcript les entiers 1, 2, 3, 4, etc ... Il est nécessaire d’arrêter cette boucle infinie en utilisant la séquence de touches CTRL-ALT-. Nous venons en fait de reproduire une itération de type GOTO bien connu de tout ceux qui ont fait du BASIC un jour !
+
+Passons à un exemple plus complexe :
+
+| yin yang |
+yin := [ :x | Transcript cr. x ] value: Continuation current.
+yang := [ :x | Transcript nextPut: $*. x ] value: Continuation current.
+yin value: yang
+
+Que s’affiche-t-il sur la fenêtre Transcript ? Nous vous conseillons de réfléchir sans exécuter le code afin de bien vous familiariser avec le mécanisme des exceptions. Si on exécute ce code dans un espace de travail, on doit voir s’afficher dans le Transcript une étoile, puis deux étoiles sur la ligne suivante, puis trois et ainsi de suite. Le résultat de l’exécution de ce code peut surprendre dans un premier temps.
+
+Essayons maintenant de comprendre ce résultat en analysant ligne à ligne le programme. A la ligne 2, on créé un bloc auquel on passe en paramètre la continuation courante. Il affiche un passage à la ligne dans le Transcript puis retourne la CC qui est stocké dans yin.
+A la ligne 3, on créé un nouveau bloc auquel on passe en paramètre la continuation courante. Ce bloc affiche une étoile dans le Transcript et retourne la CC qui est stocké dans la variable yang. 
+A la ligne 4, on restaure la CC stocké dans yin, ce qui a pour conséquence de rejouer le bloc de la ligne 2, on fait donc un nouveau passage à la ligne et c’est la continuation stockée dans yang qui est mis dans yin. L’exécution reprend à la ligne 4. Comme précédemment, on affiche une étoile sur le Transcript et on stocke dans yang une nouvelle CC. La ligne 5 restaure la continuation stockée dans yin (en fait l’ancienne continuation stockée dans yang), on réexécute donc la ligne 3 : on affiche une deuxième étoile sur la même ligne et on stocke dans yang, la CC. On passe à la ligne 4, où yin vaut maintenant de nouveau sa valeur initiale, on
+ dans laquelle la valeur de yin était celle départ, i.e on revient à la ligne 1 : passage à la ligne (après affichage de deux étoiles) ... L’exécution se poursuit comme cela par l’affichage de 3 étoiles sur la même ligne, puis de 4, etc ...
+
+Avec cet exemple, on montre que l’utilisation des continuations est loin d’être évidente. Le code n’est pas très lisible et doit réservé à des besoins de programmation très spécifiques. Généralement les continuations permettent de construire d’autres mécanismes comme des structures de contrôle ou d’expression de la concurrence plus puissant.
+
+Exemple 1 d’utilisation des continuations : Generator
+Introduction au générateur Python (http://www-128.ibm.com/developerworks/library/l-pygen.html)
+Voir code Gnu-ST : 
+
+Un générateur (Generator) permet de construire facilement un flot d’objets, y compris un flot d’objets infinis comme une suite d’entiers. L’utilisateur définit au moyen de blocs quels objets sont dans le flot.
+
+Exemple 2 d’utilisation des continuations : Seaside
+
+Exemples d’utilisation de continuations : scheduler de processus, programmation web (à la Seaside).
