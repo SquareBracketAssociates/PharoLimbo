@@ -30,6 +30,9 @@ The following API is really not nice
 	why conclusion cannot be called contents
 ]]]
 
+we could 
+- rewrite the code,
+- propose a package to add the ==++== and other strange API for compatibility purpose.
 
 !! Where to find Xtreams
 

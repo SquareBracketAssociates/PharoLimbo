@@ -1,0 +1,172 @@
+\documentclass[envcountsame,envcountchap]{svmono}
+
+\usepackage{graphicx}
+\usepackage{ifthen}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage{hyperref}
+\usepackage{makeidx}
+\usepackage{multicol}
+\usepackage{theorem}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage[bottom]{footmisc}
+\usepackage{xspace}
+\usepackage{alltt}
+\usepackage{amssymb}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{colortbl}
+\usepackage{bookman}
+\usepackage{rotating}
+
+\newboolean{complete}
+\setboolean{complete}{false}
+
+%% for this to happen start the file with
+%\ifx\wholebook\relax\else
+%\input{../common.tex}
+%\begin{document}
+%\fi
+% and terminate by
+% \ifx\wholebook\relax\else\end{document}\fi
+
+%\newif\ifpdf
+%\ifx\pdfoutput\undefined
+%\pdffalse % we are not running PDFLaTeX
+%\else
+%\pdfoutput=1 % we are running PDFLaTeX
+%\pdftrue
+%\fi
+
+%\ifpdf
+%\DeclareGraphicsExtensions{.pdf, .jpg, .png}
+%\else
+%\DeclareGraphicsExtensions{.eps, .jpg}
+%\fi
+
+\definecolor{codebackground}{rgb}{0.95,0.95,0.95} 
+
+\newdimen\tmpdim
+\def\begcbox #1{\def\coloring{#1}\setbox0\hbox\bgroup\tmpdim=\textwidth\advance\tmpdim by-2\fboxsep\begin{minipage}{\tmpdim}}
+\def\endcbox{\end{minipage}\egroup\par\noindent{\colorbox{\coloring}{\box0}}}
+
+\def\CodeBox{\begcbox{codebackground}}
+\def\EndCodeBox{\endcbox}
+
+
+
+\newcommand{\ie}{\textit{i.e.,}\xspace}
+\newcommand{\eg}{\textit{e.g.,}\xspace}
+\newcommand{\etc}{\textit{etc.}\xspace}
+
+\newcommand{\secref}[1]{Section~\ref{#1}\xspace}
+\newcommand{\figref}[1]{Figure~\ref{#1}\xspace}
+\newcommand{\charef}[1]{Chapter~\ref{#1}\xspace}
+\newcommand{\appref}[1]{Appendix~\ref{#1}\xspace}
+\newcommand{\tabref}[1]{Table~\ref{#1}\xspace}
+
+%%%for code in text
+\newcommand{\ct}[1]{{\small\textsf{#1}}}
+
+\newcommand{\nb}[2]{
+    \fbox{\bfseries\sffamily\scriptsize#1}
+    {\sf\small$\blacktriangleright$\textit{#2}$\blacktriangleleft$}
+   }
+\newcommand{\pav}[1]{\nb{pavel}{#1}}
+\newcommand\stef[1]{\nb{SD}{#1}}
+
+\newcommand{\fullrow}[1]{\multicolumn{8}{|>{\columncolor{yellow}}l|}{\sf {#1}}\\ \hline \hline}
+\newcommand{\rowseven}[1]{\multicolumn{7}{p{9cm}|}{\sf {#1}}\\ \hline \hline}
+
+\newcommand{\ycell}[1]{\multicolumn{1}{|>{\columncolor{yellow}}l|}{\sf #1}}
+\newcommand{\defrow}[1]{\ycell{Definition} & \rowseven{#1}}
+\newcommand{\yccell}[1]{\multicolumn{1}{>{\columncolor{yellow}}c|}{\sf #1}}
+\newcommand{\wcell}[1]{\multicolumn{1}{|c|}{\sf #1}}
+\newcommand{\widecell}[1]{\multicolumn{1}{p{2.5cm}|}{\sf #1}}
+
+\newcommand{\wccell}[1]{\multicolumn{1}{c|}{\sf #1}}
+\newcommand{\emptyfour}{\multicolumn{4}{l|}{}\\}
+\newcommand{\emptytwo}{\multicolumn{2}{l|}{}\\}
+
+\newenvironment{sfalltt}
+    {\begin{scriptsize}\begin{alltt}\sffamily}
+    {\end{alltt}\end{scriptsize}}
+
+\setcounter{secnumdepth}{2}
+
+\definecolor{darkred}{rgb}{0.5,0,0}
+\definecolor{darkgreen}{rgb}{0,0.5,0}
+\definecolor{darkblue}{rgb}{0,0,0.5}
+
+\newboolean{isComplete}
+\setboolean{isComplete}{false}
+
+\newcommand{\printTWO}{\ifthenelse{\boolean{isComplete}}
+       {\begin{quote}{\em IS COMPLETE}\end{quote}}
+       {\begin{quote}{\em IS PARTIAL}\end{quote}}}
+
+
+\newcommand{\completeOrPartial}[2]{\ifthenelse{\boolean{isComplete}}
+       {\input{#1}}
+       {\input{#2}}}
+
+\setlength{\marginparsep}{2mm}
+\newcommand{\marge}[1]{\marginpar{{\sffamily \bfseries #1}}}
+\newcommand{\intent}{\marge{\hfill Description}}
+\newcommand{\applies}{\marge{\hfill Applies To}}
+\newcommand{\motiv}{\marge{\hfill Impact}}
+\newcommand{\derule}{\marge{\hfill Detection}}
+\newcommand{\heur}{\marge{\hfill Heuristics}}
+\newcommand{\exam}{\marge{\hfill Example}}
+\newcommand{\refac}{\marge{\hfill Refactoring}}
+\newcommand{\remarks}{\marge{\hfill Remarks}}
+\newcommand{\skiphalf}{\vspace{0.5cm}}
+\newcommand{\skipquarter}{\vspace{0.25cm}}
+\newcommand{\dstitle}[1]{\section{{#1}}\rule{\textwidth}{0.05cm} \skipquarter}
+\newcommand{\chatitle}[1]{\chapter{{#1}}}
+\newcommand{\sectitle}[1]{\section{{#1}}}
+\newcommand{\subsectitle}[1]{\subsection{{#1}}}
+\newcommand{\subsubsectitle}[1]{\subsubsection{{#1}}}
+
+\renewcommand{\baselinestretch}{1.1}
+
+%%% here we should add the ffolders where the figures should be looked up
+\graphicspath{{./SEA1/}{./SEA2}}
+
+\hypersetup{
+   a4paper,
+   pdfstartview=FitV,
+   colorlinks,
+   linkcolor=darkblue,
+   citecolor=darkblue,
+   pdftitle={Getting Started with Seaside},
+   pdfauthor={Pavel Krivanek}
+}
+
+%GATHER{bib/scg.bib}
+%GATHER{oomip.bbl}
+
+
+%\newenvironment{code}
+%{\small \par\sf
+%\begin{tabbing}
+%xxxx\=xxxx\=xxxx\=xxxx\=xxxx\=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\=
+%xxxx\=xxxx\=xxxx\=xxxx\=xxxx\=\kill}
+%{\end{tabbing}
+%\sf\normalsize
+%\par
+%}    
+
+\newenvironment{code}
+{\small\par\begin{alltt}}
+{\end{alltt}\sf\normalsize
+\par}    
+
+\newcommand{\sep}{$>>$}
+\newcommand{\pipe}{$|$}
+
+\newenvironment{bcode}
+    {\begin{alltt}\CodeBox\sffamily\begin{small}}
+    {\end{small}\EndCodeBox\end{alltt}}
+
+
