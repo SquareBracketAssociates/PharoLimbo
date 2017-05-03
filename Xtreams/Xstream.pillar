@@ -75,14 +75,14 @@ Streams are primarily created by messages with ==-ing== suffix on the first keyw
 
 Similarly, a write stream is created by sending ==writing== to a ''destination'' terminal. Generally the same kinds of objects can serve as sources or destinations, Xtreams-Terminals provides further details on what those are. Message ==writing== sent to a write stream returns the same stream.
 
-[[[label=Comparing classic and xtreams creation API|language=Smalltalk
+[[[label=Comparing classic and xtreams creation API
 "classic"
 'hello world' readStream
 "xtreams"
 'hello world' reading 
 ]]]
 
-[[[label=Comparing classic and xtreams creation API|language=Smalltalk
+[[[label=Comparing classic and xtreams creation API
 "classic"
 'hello world' writeStream
 "xtreams"
@@ -95,18 +95,18 @@ Here are few simple examples showing equivalent code in classic streams and xtre
 
 [[[
 "classic"
-	'hello world' readStream next: 5.
+'hello world' readStream next: 5.
 "xtreams"
-	'hello world' reading read: 5.
+'hello world' reading read: 5.
 ]]]
 
 
 
 [[[
 "classic"
-	String new writeStream nextPutAll: 'hello'; contents
+String new writeStream nextPutAll: 'hello'; contents
 "xtreams"
-	String new writing write: 'hello'; close; terminal
+String new writing write: 'hello'; close; terminal
 ]]]
 
 
@@ -116,16 +116,16 @@ Nothing terribly surprising here, just some API changes. Note that xtreams do no
 (ByteArray new withEncoding: #ascii) writeStream nextPutAll: 'Hello'; contents
 ]]]
 
-Instead, in Xtreams, if you close a write stream on a collection it will trim the underlying collection down to the actual content. So the collection itself corresponds to stream ==contents== after closing. This provides equivalent capability within the constraints of generally applicable write stream API. Message ==terminal== can be used to retrieve the underlying terminal from a stream or stream stack. Message ==conclusion== can be used as a convenient shortcut combining ==close== and ==terminal= together.
+Instead, in Xtreams, if you close a write stream on a collection it will trim the underlying collection down to the actual content. So the collection itself corresponds to stream ==contents== after closing. This provides equivalent capability within the constraints of generally applicable write stream API. Message ==terminal== can be used to retrieve the underlying terminal from a stream or stream stack. Message ==conclusion== can be used as a convenient shortcut combining ==close== and safar==terminal= together.
 
 
-|classic	|	xtreams|
+|classic	| xtreams|
 |next	| get|
 |nextPut:	| put:|
-|next:	| read:|
-|next:into:startingAt:	| read:into:/read:into:at: |
+|next: 	| read:|
+|next:into:startingAt: | read:into:/read:into:at: |
 |nextPutAll:|	 write: |
-|next:putAll:startingAt:	| write:from:/write:from:at: |
+|next:putAll:startingAt:| write:from:/write:from:at: |
 |upToEnd	| rest |
 |skip:	| ==++== |
 
