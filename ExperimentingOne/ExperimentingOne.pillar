@@ -1,10 +1,25 @@
-!!! Question
+!! Performance alternatives
+!!! The Question
 
-One of the things I noticed was that, in the library example, they are modeling that data a little differently than I have been.
-To persist a list of items (and easily retrieve them), i just gave the object an “id”, and store them on a class variable as an OrderedCollection. In the library example, I see something i really like. rather than saving an ordered collection, they save it as a dictionary. This dictionary goes =={ id -> object }==. This takes the id out of the the object (which i really like) and makes the id generation pretty much irrelevant. My question: is there any performance hit either way once this list grows to tens of thousands of records?
+Someone asked the mail list...
+"I have  been working on creating a REST interface using Teapot. 
+In learning how to handle exceptions, I have been following along with the library example.
+One of the things I noticed in that, was they are modeling that data a little differently than I have been.
+To persist a list of items (and easily retrieve them), I just gave my objects an “id”, 
+and store them on a class variable as an OrderedCollection. 
 
+In the library example, I see something i really like. 
+Rather than saving an ordered collection, they save it as a dictionary. 
+This dictionary goes =={ id -> object }==. 
+This takes the id out of the the object (which i really like) and makes the id generation pretty much irrelevant. 
 
-!!! Setup 
+So I like to know...
+Is there any performance hit either way once this list grows to tens of thousands of records?
+
+!!! Fishing an answer
+
+Well its easy to discover by experiment...
+
 [[[
 Object subclass: #AA
 	instanceVariableNames: 'id data'
@@ -35,9 +50,9 @@ o := nil.
 d := nil.
 Smalltalk garbageCollect.
 
-N=5 ==> "#(5 42)"
-N=6 ==> "#(434 839)" 
-N=7 ==> "#(5733 17208)"
+N~5 ==> "#(5 42)"
+N~6 ==> "#(434 839)" 
+N~7 ==> "#(5733 17208)"
 ]]]
 
 !!! Preallocating
@@ -47,9 +62,9 @@ Slight modification to pre-allocate space to ignore dynamic growth cost...
 o := OrderedCollection new: 2 * N.
 d := Dictionary new:  2 * N.
 
-N=5 ==> "#(7 33)"
-N=6 ==> "#(411 802)"
-N=7 ==> "#(5892 15141)"
+N~5 ==> "#(7 33)"
+N~6 ==> "#(411 802)"
+N~7 ==> "#(5892 15141)"
 ]]]
 
 
@@ -85,7 +100,9 @@ N=7 ==>  "#(274 470 1313)" "#(259 456 1340)" "#(269 467 1306)"
 ]]]
 
 
-So insertions into Dictionaries are  two to three  times slower than OrderedCollection, and  five to six times slower than Arrays.
+So insertions into Dictionaries are  two to three  times slower than OrderedCollection, 
+and  five to six times slower than Arrays.
 
-Now this is milliseconds, so even at the 100,000 level Dictionary performance  may be a reasonable tradeoff for other benefits.
+Now this is milliseconds, so even at the 100,000 level Dictionary performance  
+may be a reasonable tradeoff for other benefits.
 

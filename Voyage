@@ -1,0 +1,31 @@
+Collect all suggestions for the "Persisting Objects with Voyage" chapter in the book "Enterprise Pharo"
+
+1) Text: "In a deployed application, there should be no need to close or reset the connection to the database"
+I am not a native speaker but for me this words are to week.
+We should stronlgy warn to do this/exactly explain what happens if someone does this and already has references in the image to some objects in the cache.
+-> In this case, a new cache is created and the object in the old cache seems to be another one. If saving the object in the new cache, it is doubled.
+Perhaps add some sentences explaining how the cache works. There have been some discussions about it in slack, mails and nabble about this.
+It would be useful to summarize it/explain it. (I suffered a lot from it, took much time because I did not understand what VORepository current reset does)
+
+2) 
+
+
+
+
+
+Voyage
+Feedback on its installation and use:
+
+- MongoDB get installed and running easily
+- Get a hard time installing it from the official configuration browser, it required an update to Seaside which in turn does not work. Fight for a couple of days to get it installed.http://forum.world.st/Latest-Voyage-for-Pharo4-tp4934769p4935335.html
+- Got hanging Voyage, need to use the latest version and not the one from the Configuration browser http://forum.world.st/Voyage-hang-tp4935341.html
+- Instance will not synchronize between several Voyage repository: you need to stick to one repo or use id to link data between repo, like good old Sql http://forum.world.st/Voyage-Unique-vs-Multiple-repo-tt4935133.html
+- Get back an object to its repository value, not sure about this one http://forum.world.st/Voyage-refreshing-an-object-back-to-its-repository-state-tp4935881.html
+- Have difficulties to iterate over a fetched object attributes, to me Voyage does not behave as expected http://forum.world.st/Voyage-and-instances-retrieving-tt4936868.html. Here is a test to expose the problem http://forum.world.st/Test-for-Voyage-failure-to-materialize-in-some-situation-tt4938014.html
+- Got a one day shift when saving/loading a date http://forum.world.st/Voyage-and-Date-tp4937235.html
+- Meet broken class, not sure what it is about http://forum.world.st/Voyage-VOToOneDescription-or-VOMongoToOneDescription-tp4936998.html
+- Association and dictionary need to be on elementary form with key a string and value a numeric, otherwise you can not save it. There is a work around http://forum.world.st/Voyage-and-Association-tt4936673.html#a4936694
+- Scaled Decimal will mostly not be persisted. If you are doing arithmetic computing and exact value is needed, you will end with a too large integer error from Voyage (for the fraction den/num representing your exact value). You have no choice but to use float http://forum.world.st/Voyage-and-Scaled-decimal-tt4936625.html
+- Voyage singleton repository and Seaside are reported to work together just fine http://forum.world.st/Voyage-and-seaside-tt4935946.html
+- When editing and saving a client model, I got a duplicated object in the Participant collection. http://forum.world.st/Voyage-and-duplicated-entry-tt4937268.html
+- You need an adaptor for your Date attributes: to convert back from the DateAndTime saved form in Mongo http://forum.world.st/Voyage-save-Date-get-back-DateAndTime-bug-tt4703601.html, but there is issue with a shifted date of one day, really!?
